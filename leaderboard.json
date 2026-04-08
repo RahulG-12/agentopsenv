@@ -1,0 +1,58 @@
+[
+  {
+    "rank": 1,
+    "agent_name": "Smart Interleaved Agent",
+    "author": "AgentOpsEnv Team",
+    "model": "smart-handcrafted",
+    "scores": {
+      "easy": 0.4854,
+      "medium": 0.6928,
+      "hard": 0.6824
+    },
+    "avg_score": 0.6202,
+    "submitted_at": "2025-01-01T00:00:00",
+    "notes": "Near-optimal hand-crafted planner \u2014 interleaved priority-aware execution"
+  },
+  {
+    "rank": 2,
+    "agent_name": "Q-Learning Agent",
+    "author": "AgentOpsEnv Team",
+    "model": "tabular-qlearning-150ep",
+    "scores": {
+      "easy": 0.85,
+      "medium": 0.4828,
+      "hard": 0.4566
+    },
+    "avg_score": 0.5965,
+    "submitted_at": "2025-01-01T00:00:00",
+    "notes": "Tabular Q-learning, 150 training episodes per difficulty"
+  },
+  {
+    "rank": 3,
+    "agent_name": "Greedy Agent",
+    "author": "AgentOpsEnv Team",
+    "model": "greedy-rules",
+    "scores": {
+      "easy": 0.8277,
+      "medium": 0.5021,
+      "hard": 0.3331
+    },
+    "avg_score": 0.5543,
+    "submitted_at": "2025-01-01T00:00:00",
+    "notes": "Rule-based greedy: always acts on most urgent visible item"
+  },
+  {
+    "rank": 4,
+    "agent_name": "Random Agent",
+    "author": "AgentOpsEnv Team",
+    "model": "random",
+    "scores": {
+      "easy": 0.6285,
+      "medium": 0.3767,
+      "hard": 0.4535
+    },
+    "avg_score": 0.4862,
+    "submitted_at": "2025-01-01T00:00:00",
+    "notes": "Uniform random action selection baseline"
+  }
+]

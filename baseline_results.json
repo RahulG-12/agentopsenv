@@ -1,0 +1,202 @@
+{
+  "random": {
+    "easy": {
+      "agent": "random",
+      "difficulty": "easy",
+      "episodes": 5,
+      "score_mean": 0.6285,
+      "score_max": 0.8015,
+      "score_min": 0.0991,
+      "reward_mean": -6.8,
+      "scores": [
+        0.7965,
+        0.6515,
+        0.0991,
+        0.794,
+        0.8015
+      ]
+    },
+    "medium": {
+      "agent": "random",
+      "difficulty": "medium",
+      "episodes": 5,
+      "score_mean": 0.3767,
+      "score_max": 0.81,
+      "score_min": 0.075,
+      "reward_mean": -16.52,
+      "scores": [
+        0.81,
+        0.11,
+        0.7834,
+        0.075,
+        0.1052
+      ]
+    },
+    "hard": {
+      "agent": "random",
+      "difficulty": "hard",
+      "episodes": 5,
+      "score_mean": 0.4535,
+      "score_max": 0.782,
+      "score_min": 0.056,
+      "reward_mean": 9.42,
+      "scores": [
+        0.6369,
+        0.3597,
+        0.782,
+        0.433,
+        0.056
+      ]
+    }
+  },
+  "greedy": {
+    "easy": {
+      "agent": "greedy",
+      "difficulty": "easy",
+      "episodes": 5,
+      "score_mean": 0.8277,
+      "score_max": 0.8277,
+      "score_min": 0.8277,
+      "reward_mean": 25.5,
+      "scores": [
+        0.8277,
+        0.8277,
+        0.8277,
+        0.8277,
+        0.8277
+      ]
+    },
+    "medium": {
+      "agent": "greedy",
+      "difficulty": "medium",
+      "episodes": 5,
+      "score_mean": 0.5021,
+      "score_max": 0.5021,
+      "score_min": 0.5021,
+      "reward_mean": -13.6,
+      "scores": [
+        0.5021,
+        0.5021,
+        0.5021,
+        0.5021,
+        0.5021
+      ]
+    },
+    "hard": {
+      "agent": "greedy",
+      "difficulty": "hard",
+      "episodes": 5,
+      "score_mean": 0.3331,
+      "score_max": 0.3331,
+      "score_min": 0.3331,
+      "reward_mean": -56.15,
+      "scores": [
+        0.3331,
+        0.3331,
+        0.3331,
+        0.3331,
+        0.3331
+      ]
+    }
+  },
+  "smart": {
+    "easy": {
+      "agent": "smart",
+      "difficulty": "easy",
+      "episodes": 5,
+      "score_mean": 0.4854,
+      "score_max": 0.4854,
+      "score_min": 0.4854,
+      "reward_mean": 1.4,
+      "scores": [
+        0.4854,
+        0.4854,
+        0.4854,
+        0.4854,
+        0.4854
+      ]
+    },
+    "medium": {
+      "agent": "smart",
+      "difficulty": "medium",
+      "episodes": 5,
+      "score_mean": 0.6928,
+      "score_max": 0.6928,
+      "score_min": 0.6928,
+      "reward_mean": 24.75,
+      "scores": [
+        0.6928,
+        0.6928,
+        0.6928,
+        0.6928,
+        0.6928
+      ]
+    },
+    "hard": {
+      "agent": "smart",
+      "difficulty": "hard",
+      "episodes": 5,
+      "score_mean": 0.6824,
+      "score_max": 0.6824,
+      "score_min": 0.6824,
+      "reward_mean": 40.35,
+      "scores": [
+        0.6824,
+        0.6824,
+        0.6824,
+        0.6824,
+        0.6824
+      ]
+    }
+  },
+  "qlearning": {
+    "easy": {
+      "agent": "qlearning",
+      "difficulty": "easy",
+      "episodes": 5,
+      "score_mean": 0.85,
+      "score_max": 0.8632,
+      "score_min": 0.8399,
+      "reward_mean": 30.31,
+      "scores": [
+        0.8458,
+        0.8632,
+        0.8458,
+        0.8554,
+        0.8399
+      ]
+    },
+    "medium": {
+      "agent": "qlearning",
+      "difficulty": "medium",
+      "episodes": 5,
+      "score_mean": 0.4828,
+      "score_max": 0.7449,
+      "score_min": 0.0804,
+      "reward_mean": -2.38,
+      "scores": [
+        0.538,
+        0.566,
+        0.7449,
+        0.4846,
+        0.0804
+      ]
+    },
+    "hard": {
+      "agent": "qlearning",
+      "difficulty": "hard",
+      "episodes": 5,
+      "score_mean": 0.4566,
+      "score_max": 0.6803,
+      "score_min": 0.0774,
+      "reward_mean": -6.33,
+      "scores": [
+        0.2387,
+        0.6803,
+        0.6803,
+        0.6063,
+        0.0774
+      ]
+    }
+  }
+}

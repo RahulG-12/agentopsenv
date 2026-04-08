@@ -1,0 +1,166 @@
+name: AgentOpsEnv
+version: "1.0.0"
+description: >
+  A realistic professional workflow simulation where an AI agent acts as a
+  knowledge worker managing emails, extracting tasks, prioritising work, and
+  scheduling under constraints of limited time, energy, and conflicting deadlines.
+  Designed to evaluate multi-step planning, long-horizon reasoning, and
+  resource-aware decision-making in language models.
+
+author: AgentOpsEnv Contributors
+license: MIT
+tags:
+  - productivity
+  - workflow
+  - planning
+  - email
+  - scheduling
+  - multi-step-reasoning
+  - resource-management
+
+observation_space:
+  type: structured
+  fields:
+    - name: step
+      type: int
+      description: Current time step
+    - name: time_remaining
+      type: int
+      description: Steps remaining in episode
+    - name: energy_level
+      type: float
+      range: [0.0, 1.0]
+      description: Agent's current energy (affects task completion effectiveness)
+    - name: emails
+      type: list[Email]
+      description: Current inbox emails with id, subject, body, priority, deadline, type
+    - name: tasks
+      type: list[Task]
+      description: Extracted tasks with id, priority, deadline, effort, status
+    - name: calendar
+      type: list[CalendarSlot]
+      description: Scheduled task slots (time_step, task_id, duration)
+    - name: action_history
+      type: list[ActionHistoryEntry]
+      description: Last 10 actions with rewards and outcomes
+    - name: overdue_tasks
+      type: list[str]
+      description: IDs of tasks that have passed their deadline
+    - name: completed_tasks
+      type: list[str]
+      description: IDs of successfully completed tasks
+    - name: warnings
+      type: list[str]
+      description: Contextual alerts (imminent deadlines, energy warnings)
+
+action_space:
+  type: discrete_parameterised
+  actions:
+    - name: read_email
+      params: [email_id]
+      description: Mark an email as read, revealing its full content and type
+    - name: extract_task
+      params: [email_id]
+      description: Extract a hidden task from a read actionable email
+    - name: delete_email
+      params: [email_id]
+      description: Permanently remove an email from inbox
+    - name: schedule_task
+      params: [task_id, time_slot]
+      description: Schedule a task into a specific calendar time slot
+    - name: complete_task
+      params: [task_id]
+      description: Work on a task for one step (may require multiple calls for effort > 1)
+    - name: defer_task
+      params: [task_id]
+      description: Mark a task as deferred (skipped this episode)
+    - name: rest
+      params: []
+      description: Recover energy (no task progress; costs one step)
+    - name: noop
+      params: []
+      description: Do nothing (penalised if urgent tasks exist)
+
+reward:
+  type: dense
+  range: [-inf, +inf]  # episode total; individual steps bounded ~[-5, +10]
+  components:
+    task_completion:   "Base reward scaled by priority weight (CRITICAL×4, HIGH×2.5, MEDIUM×1.5, LOW×0.5)"
+    deadline_bonus:    "Bonus proportional to steps completed before deadline (capped at 3.0×priority)"
+    progress_reward:   "Partial credit for reading emails, extracting tasks, scheduling"
+    spam_cleanup:      "+0.3 per spam email correctly deleted"
+    deadline_penalty:  "-3.0×priority for each task overdue at episode end"
+    redundancy_penalty: "-0.5 for repeating the same action on the same target within 3 steps"
+    scheduling_penalty: "-0.8 for scheduling a task past its deadline"
+    energy_penalty:    "-0.4 for completing tasks at critically low energy (<20%)"
+    idle_penalty:      "-0.2 for NOOP/REST when urgent tasks are pending"
+
+tasks:
+  - id: task_easy_inbox_triage
+    name: "Inbox Triage: Spam Removal"
+    difficulty: easy
+    max_steps: 20
+    seed: 100
+    description: Identify and delete all spam emails without removing important ones.
+
+  - id: task_medium_task_extraction
+    name: "Task Extraction & Deadline Scheduling"
+    difficulty: medium
+    max_steps: 30
+    seed: 200
+    description: Extract tasks from emails, schedule them, and complete before deadlines.
+
+  - id: task_hard_full_optimisation
+    name: "Full Workflow Optimisation Under Constraints"
+    difficulty: hard
+    max_steps: 40
+    seed: 300
+    description: >
+      Optimise the full workflow — triage, extract, schedule, complete — under
+      conflicting deadlines, noisy emails, energy constraints, and priority trade-offs.
+
+grader:
+  type: deterministic
+  score_range: [0.0, 1.0]
+  formula: >
+    overall = 0.40 * task_completion_score
+            + 0.30 * deadline_adherence_score
+            + 0.20 * efficiency_score
+            + 0.10 * resource_score
+  sub_scores:
+    task_completion_score:
+      weight: 0.40
+      description: Priority-weighted fraction of tasks completed
+    deadline_adherence_score:
+      weight: 0.30
+      description: Priority-weighted fraction completed on or before deadline (with early bonus)
+    efficiency_score:
+      weight: 0.20
+      description: Ratio of minimum viable actions to actual actions taken
+    resource_score:
+      weight: 0.10
+      description: Energy discipline and time utilisation
+
+baseline_results:
+  random_agent:
+    task_easy_inbox_triage:      0.12
+    task_medium_task_extraction: 0.08
+    task_hard_full_optimisation: 0.04
+  greedy_agent:
+    task_easy_inbox_triage:      0.61
+    task_medium_task_extraction: 0.43
+    task_hard_full_optimisation: 0.29
+  llm_agent_gpt4o:
+    task_easy_inbox_triage:      0.82
+    task_medium_task_extraction: 0.67
+    task_hard_full_optimisation: 0.51
+
+dependencies:
+  python: ">=3.10"
+  packages:
+    - pydantic>=2.0
+    - pyyaml>=6.0
+    - openai>=1.0
+    - fastapi>=0.110
+    - uvicorn>=0.29
+    - httpx>=0.27

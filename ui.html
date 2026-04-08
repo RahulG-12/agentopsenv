@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AgentOpsEnv — Workflow Optimisation Environment</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:         #0a0d14;
+    --surface:    #111827;
+    --surface2:   #1a2235;
+    --border:     #1f2d47;
+    --accent:     #00d4ff;
+    --accent2:    #7c3aed;
+    --green:      #10b981;
+    --yellow:     #f59e0b;
+    --red:        #ef4444;
+    --orange:     #f97316;
+    --text:       #e2e8f0;
+    --muted:      #64748b;
+    --mono:       'JetBrains Mono', monospace;
+    --sans:       'Syne', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid noise overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Header */
+  header {
+    position: relative;
+    z-index: 10;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, #0d1525 0%, #111827 100%);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .logo-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    animation: pulse-border 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-border {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0,212,255,0.3); }
+    50%       { box-shadow: 0 0 0 8px rgba(0,212,255,0); }
+  }
+
+  .logo h1 {
+    font-family: var(--sans);
+    font-size: 1.4rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+  }
+
+  .logo p {
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 1px;
+  }
+
+  .header-badges {
+    margin-left: auto;
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .badge {
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .badge-green  { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+  .badge-blue   { background: rgba(0,212,255,0.1);   color: var(--accent); border: 1px solid rgba(0,212,255,0.25); }
+  .badge-purple { background: rgba(124,58,237,0.15); color: #a78bfa; border: 1px solid rgba(124,58,237,0.3); }
+
+  /* Main layout */
+  .main {
+    position: relative;
+    z-index: 5;
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    grid-template-rows: auto 1fr;
+    gap: 0;
+    height: calc(100vh - 77px);
+  }
+
+  /* Control panel */
+  .control-panel {
+    grid-row: 1 / 3;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .panel-section {
+    padding: 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-section h3 {
+    font-family: var(--sans);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 1rem;
+  }
+
+  /* Config */
+  .config-grid { display: grid; gap: 0.75rem; }
+
+  label { display: block; font-size: 0.7rem; color: var(--muted); margin-bottom: 0.3rem; }
+
+  select, input[type="number"] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  select:focus, input[type="number"]:focus {
+    border-color: var(--accent);
+  }
+
+  /* Buttons */
+  .btn {
+    width: 100%;
+    padding: 0.65rem 1rem;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #0099cc);
+    color: #000;
+    font-weight: 700;
+  }
+
+  .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-danger {
+    background: rgba(239,68,68,0.1);
+    color: var(--red);
+    border: 1px solid rgba(239,68,68,0.3);
+  }
+
+  .btn-danger:hover { background: rgba(239,68,68,0.2); }
+
+  .btn-sm {
+    width: auto;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.7rem;
+    border-radius: 5px;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .stat-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem;
+  }
+
+  .stat-card .stat-label {
+    font-size: 0.6rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .stat-card .stat-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-top: 0.15rem;
+    color: var(--accent);
+  }
+
+  /* Energy bar */
+  .energy-bar-wrap { margin-top: 0.75rem; }
+  .energy-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+  }
+
+  .energy-bar-track {
+    height: 8px;
+    background: var(--surface2);
+    border-radius: 99px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .energy-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.5s ease, background 0.5s ease;
+  }
+
+  /* Action form */
+  .action-row {
+    display: grid;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Warnings */
+  .warning-list { display: flex; flex-direction: column; gap: 0.4rem; }
+
+  .warning-item {
+    background: rgba(245,158,11,0.1);
+    border: 1px solid rgba(245,158,11,0.25);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.7rem;
+    color: var(--yellow);
+  }
+
+  /* Main workspace */
+  .workspace {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .workspace-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    padding: 0 1rem;
+  }
+
+  .tab {
+    padding: 0.85rem 1.25rem;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .tab-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem;
+    display: none;
+  }
+
+  .tab-content.active { display: block; }
+
+  /* Email list */
+  .email-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+  .email-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    transition: all 0.2s;
+    cursor: default;
+  }
+
+  .email-card:hover { border-color: var(--accent); }
+
+  .email-card.unread { border-left: 3px solid var(--accent); }
+  .email-card.spam   { border-left: 3px solid var(--red); opacity: 0.8; }
+  .email-card.info   { border-left: 3px solid var(--green); }
+  .email-card.actionable { border-left: 3px solid var(--yellow); }
+  .email-card.ambiguous  { border-left: 3px solid var(--muted); }
+
+  .email-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .email-subject {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .email-meta {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+  }
+
+  .pill {
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.6rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .pill-critical { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+  .pill-high     { background: rgba(249,115,22,0.15); color: var(--orange); border: 1px solid rgba(249,115,22,0.3); }
+  .pill-medium   { background: rgba(245,158,11,0.15); color: var(--yellow); border: 1px solid rgba(245,158,11,0.3); }
+  .pill-low      { background: rgba(100,116,139,0.15); color: var(--muted); border: 1px solid rgba(100,116,139,0.3); }
+  .pill-spam     { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+  .pill-info     { background: rgba(16,185,129,0.1); color: var(--green); border: 1px solid rgba(16,185,129,0.2); }
+  .pill-actionable { background: rgba(245,158,11,0.1); color: var(--yellow); border: 1px solid rgba(245,158,11,0.2); }
+  .pill-ambiguous  { background: rgba(100,116,139,0.1); color: var(--muted); border: 1px solid rgba(100,116,139,0.2); }
+
+  .email-body {
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.5;
+    max-height: 3.5em;
+    overflow: hidden;
+  }
+
+  .email-actions {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  /* Task list */
+  .task-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+  .task-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    transition: all 0.2s;
+  }
+
+  .task-card:hover { border-color: var(--accent); }
+  .task-card.completed { opacity: 0.5; border-left: 3px solid var(--green); }
+  .task-card.overdue   { border-left: 3px solid var(--red); background: rgba(239,68,68,0.04); }
+  .task-card.deferred  { opacity: 0.4; border-left: 3px solid var(--muted); }
+
+  .task-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+
+  .task-title { font-size: 0.82rem; font-weight: 500; }
+
+  .task-meta {
+    display: flex;
+    gap: 0.75rem;
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin: 0.4rem 0;
+  }
+
+  .progress-bar-track {
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+
+  .task-actions { display: flex; gap: 0.4rem; margin-top: 0.75rem; }
+
+  /* Log */
+  .log-container {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .log-entry {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .log-step { color: var(--muted); min-width: 3ch; }
+  .log-action { color: var(--accent); min-width: 14ch; }
+  .log-reward { min-width: 7ch; }
+  .log-reward.pos { color: var(--green); }
+  .log-reward.neg { color: var(--red); }
+  .log-msg { color: var(--muted); }
+
+  /* Score card */
+  .score-display {
+    background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .score-big {
+    font-family: var(--sans);
+    font-size: 4rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1;
+  }
+
+  .score-sub { color: var(--muted); font-size: 0.75rem; margin-top: 0.5rem; }
+
+  .score-breakdown {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .score-breakdown-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem;
+    text-align: left;
+  }
+
+  .score-breakdown-item .label { font-size: 0.65rem; color: var(--muted); }
+  .score-breakdown-item .value { font-size: 1.2rem; font-weight: 600; color: var(--accent); }
+
+  /* Calendar */
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 0.3rem;
+    margin-top: 0.5rem;
+  }
+
+  .cal-slot {
+    aspect-ratio: 1;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.55rem;
+    color: var(--muted);
+    transition: all 0.2s;
+    cursor: default;
+    flex-direction: column;
+    gap: 0.1rem;
+    text-align: center;
+    padding: 2px;
+  }
+
+  .cal-slot.current { border-color: var(--accent); background: rgba(0,212,255,0.08); }
+  .cal-slot.booked  { background: rgba(124,58,237,0.2); border-color: rgba(124,58,237,0.4); color: var(--text); }
+  .cal-slot.past    { opacity: 0.35; }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  .empty-state .icon { font-size: 2.5rem; margin-bottom: 0.75rem; display: block; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* Toast */
+  .toast-container {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .toast {
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+    max-width: 360px;
+  }
+
+  @keyframes slideIn  { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes fadeOut  { from { opacity: 1; } to { opacity: 0; } }
+
+  .toast-success { background: rgba(16,185,129,0.2); border: 1px solid rgba(16,185,129,0.4); color: var(--green); }
+  .toast-error   { background: rgba(239,68,68,0.2);  border: 1px solid rgba(239,68,68,0.4);  color: var(--red); }
+  .toast-info    { background: rgba(0,212,255,0.15); border: 1px solid rgba(0,212,255,0.3);  color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚙</div>
+    <div>
+      <h1>AgentOpsEnv</h1>
+      <p>Real-World Workflow Optimisation</p>
+    </div>
+  </div>
+  <div class="header-badges">
+    <span class="badge badge-green">OpenEnv v1</span>
+    <span class="badge badge-blue">REST API</span>
+    <span class="badge badge-purple">LLM Ready</span>
+  </div>
+</header>
+
+<div class="main">
+  <!-- Control Panel -->
+  <aside class="control-panel">
+
+    <div class="panel-section">
+      <h3>⚙ Configuration</h3>
+      <div class="config-grid">
+        <div>
+          <label>Difficulty</label>
+          <select id="difficulty">
+            <option value="easy">Easy — Spam Triage</option>
+            <option value="medium" selected>Medium — Task Scheduling</option>
+            <option value="hard">Hard — Full Optimisation</option>
+          </select>
+        </div>
+        <div>
+          <label>Seed</label>
+          <input type="number" id="seed" value="42" min="0" max="9999" />
+        </div>
+        <button class="btn btn-primary" onclick="createSession()">⚡ Start Session</button>
+        <button class="btn btn-secondary" onclick="resetSession()">↺ Reset</button>
+      </div>
+    </div>
+
+    <div class="panel-section" id="status-panel" style="display:none">
+      <h3>📊 Status</h3>
+      <div class="stats-bar">
+        <div class="stat-card">
+          <div class="stat-label">Step</div>
+          <div class="stat-value" id="stat-step">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Remaining</div>
+          <div class="stat-value" id="stat-remaining">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">✓ Done</div>
+          <div class="stat-value" id="stat-done" style="color:var(--green)">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">⚠ Overdue</div>
+          <div class="stat-value" id="stat-overdue" style="color:var(--red)">0</div>
+        </div>
+      </div>
+      <div class="energy-bar-wrap">
+        <div class="energy-bar-label">
+          <span>Energy</span>
+          <span id="energy-pct">100%</span>
+        </div>
+        <div class="energy-bar-track">
+          <div class="energy-bar-fill" id="energy-bar" style="width:100%;background:var(--green)"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-section" id="action-panel" style="display:none">
+      <h3>🎯 Manual Action</h3>
+      <div class="action-row">
+        <div>
+          <label>Action Type</label>
+          <select id="action-type" onchange="updateActionParams()">
+            <option value="read_email">read_email</option>
+            <option value="extract_task">extract_task</option>
+            <option value="delete_email">delete_email</option>
+            <option value="schedule_task">schedule_task</option>
+            <option value="complete_task">complete_task</option>
+            <option value="defer_task">defer_task</option>
+            <option value="rest">rest</option>
+            <option value="noop">noop</option>
+          </select>
+        </div>
+        <div id="email-id-row">
+          <label>Email ID</label>
+          <input type="text" id="action-email-id" placeholder="e.g. a1b2c3d4" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.5rem .75rem;border-radius:6px;font-family:var(--mono);font-size:.8rem;outline:none"/>
+        </div>
+        <div id="task-id-row" style="display:none">
+          <label>Task ID</label>
+          <input type="text" id="action-task-id" placeholder="e.g. x9y8z7w6" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.5rem .75rem;border-radius:6px;font-family:var(--mono);font-size:.8rem;outline:none"/>
+        </div>
+        <div id="time-slot-row" style="display:none">
+          <label>Time Slot (step number)</label>
+          <input type="number" id="action-time-slot" placeholder="e.g. 5" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.5rem .75rem;border-radius:6px;font-family:var(--mono);font-size:.8rem;outline:none"/>
+        </div>
+        <button class="btn btn-primary" onclick="submitAction()">▶ Execute</button>
+      </div>
+    </div>
+
+    <div class="panel-section" id="warnings-panel" style="display:none">
+      <h3>⚠ Alerts</h3>
+      <div class="warning-list" id="warnings-list"></div>
+    </div>
+
+    <div class="panel-section">
+      <h3>📡 API Reference</h3>
+      <div style="font-size:.68rem;color:var(--muted);line-height:1.8">
+        <div><span style="color:var(--accent)">POST</span> /session/create</div>
+        <div><span style="color:var(--accent)">POST</span> /session/step</div>
+        <div><span style="color:var(--accent)">POST</span> /session/reset</div>
+        <div><span style="color:var(--green)">GET</span>  /session/{id}/state</div>
+        <div><span style="color:var(--green)">GET</span>  /tasks</div>
+        <div><span style="color:var(--green)">GET</span>  /health</div>
+        <div style="margin-top:.75rem; padding-top:.75rem; border-top: 1px solid var(--border)">
+          <a href="/docs" style="color:var(--accent);text-decoration:none" target="_blank">→ Swagger UI</a>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- Workspace -->
+  <div class="workspace">
+    <div class="workspace-tabs">
+      <div class="tab active" onclick="switchTab('emails')">📧 Emails</div>
+      <div class="tab" onclick="switchTab('tasks')">✅ Tasks</div>
+      <div class="tab" onclick="switchTab('calendar')">📅 Calendar</div>
+      <div class="tab" onclick="switchTab('log')">📜 Log</div>
+      <div class="tab" onclick="switchTab('score')">🏆 Score</div>
+    </div>
+
+    <!-- EMAILS -->
+    <div class="tab-content active" id="tab-emails">
+      <div class="empty-state" id="emails-empty">
+        <span class="icon">📬</span>
+        Start a session to see emails in your inbox.
+      </div>
+      <div class="email-list" id="email-list" style="display:none"></div>
+    </div>
+
+    <!-- TASKS -->
+    <div class="tab-content" id="tab-tasks">
+      <div class="empty-state" id="tasks-empty">
+        <span class="icon">📋</span>
+        Extract tasks from actionable emails to see them here.
+      </div>
+      <div class="task-list" id="task-list" style="display:none"></div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div class="tab-content" id="tab-calendar">
+      <div class="empty-state" id="cal-empty">
+        <span class="icon">📅</span>
+        Schedule tasks to populate the calendar.
+      </div>
+      <div id="calendar-view" style="display:none">
+        <div class="calendar-grid" id="calendar-grid"></div>
+      </div>
+    </div>
+
+    <!-- LOG -->
+    <div class="tab-content" id="tab-log">
+      <div class="empty-state" id="log-empty">
+        <span class="icon">📜</span>
+        Action log will appear here during the episode.
+      </div>
+      <div class="log-container" id="log-container" style="display:none"></div>
+    </div>
+
+    <!-- SCORE -->
+    <div class="tab-content" id="tab-score">
+      <div class="empty-state" id="score-empty">
+        <span class="icon">🏆</span>
+        Complete the episode to see your final score.
+      </div>
+      <div id="score-view" style="display:none">
+        <div class="score-display">
+          <div class="score-big" id="score-overall">—</div>
+          <div class="score-sub">Overall Score (0.0 – 1.0)</div>
+          <div class="score-breakdown">
+            <div class="score-breakdown-item">
+              <div class="label">Task Completion</div>
+              <div class="value" id="score-completion">—</div>
+            </div>
+            <div class="score-breakdown-item">
+              <div class="label">Deadline Adherence</div>
+              <div class="value" id="score-deadline">—</div>
+            </div>
+            <div class="score-breakdown-item">
+              <div class="label">Efficiency</div>
+              <div class="value" id="score-efficiency">—</div>
+            </div>
+            <div class="score-breakdown-item">
+              <div class="label">Resource Usage</div>
+              <div class="value" id="score-resource">—</div>
+            </div>
+          </div>
+          <div id="score-breakdown-detail" style="margin-top:1.5rem;text-align:left;font-size:.72rem;color:var(--muted);line-height:1.8"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<script>
+let sessionId = null;
+let maxSteps = 30;
+let currentStep = 0;
+
+// ── API Helpers
+async function api(method, path, body) {
+  const opts = { method, headers: {'Content-Type':'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(path, opts);
+  return r.json();
+}
+
+// ── Session management
+async function createSession() {
+  const diff = document.getElementById('difficulty').value;
+  const seed = parseInt(document.getElementById('seed').value);
+  const res = await api('POST', '/session/create', { difficulty: diff, seed });
+  if (res.session_id) {
+    sessionId = res.session_id;
+    maxSteps = res.config.max_steps;
+    currentStep = 0;
+    showToast(`Session started [${diff.toUpperCase()}] seed=${seed}`, 'info');
+    document.getElementById('status-panel').style.display = '';
+    document.getElementById('action-panel').style.display = '';
+    document.getElementById('warnings-panel').style.display = '';
+    updateUI(res.observation);
+    clearLog();
+  } else {
+    showToast('Failed to create session: ' + JSON.stringify(res), 'error');
+  }
+}
+
+async function resetSession() {
+  if (!sessionId) return;
+  const res = await api('POST', '/session/reset', { session_id: sessionId });
+  currentStep = 0;
+  updateUI(res.observation);
+  clearLog();
+  showToast('Session reset.', 'info');
+  document.getElementById('score-view').style.display = 'none';
+  document.getElementById('score-empty').style.display = '';
+}
+
+async function submitAction() {
+  if (!sessionId) { showToast('Start a session first.', 'error'); return; }
+  const atype = document.getElementById('action-type').value;
+  const action = { action_type: atype };
+  const eid = document.getElementById('action-email-id').value.trim();
+  const tid = document.getElementById('action-task-id').value.trim();
+  const slot = document.getElementById('action-time-slot').value.trim();
+  if (eid) action.email_id = eid;
+  if (tid) action.task_id  = tid;
+  if (slot) action.time_slot = parseInt(slot);
+
+  const res = await api('POST', '/session/step', { session_id: sessionId, action });
+  if (res.observation) {
+    updateUI(res.observation);
+    appendLog(res.observation.step, atype, res.reward, res.info);
+    if (res.done) {
+      showToast('Episode complete!', 'success');
+      if (res.info && res.info.episode_score) showScore(res.info.episode_score);
+    } else {
+      showToast(res.info.message.slice(0, 60), res.info.success ? 'success' : 'error');
+    }
+  } else {
+    showToast(JSON.stringify(res).slice(0, 80), 'error');
+  }
+}
+
+// ── Quick-action shortcuts from cards
+function quickAction(action) {
+  const typeEl = document.getElementById('action-type');
+  typeEl.value = action.action_type;
+  updateActionParams();
+  if (action.email_id) document.getElementById('action-email-id').value = action.email_id;
+  if (action.task_id)  document.getElementById('action-task-id').value  = action.task_id;
+  if (action.time_slot !== undefined) document.getElementById('action-time-slot').value = action.time_slot;
+}
+
+// ── UI update
+function updateUI(obs) {
+  currentStep = obs.step;
+  document.getElementById('stat-step').textContent      = obs.step;
+  document.getElementById('stat-remaining').textContent = obs.time_remaining;
+  document.getElementById('stat-done').textContent      = obs.completed_tasks.length;
+  document.getElementById('stat-overdue').textContent   = obs.overdue_tasks.length;
+
+  const e = obs.energy_level;
+  const pct = Math.round(e * 100);
+  document.getElementById('energy-pct').textContent = pct + '%';
+  const bar = document.getElementById('energy-bar');
+  bar.style.width = pct + '%';
+  bar.style.background = e > 0.5 ? 'var(--green)' : e > 0.25 ? 'var(--yellow)' : 'var(--red)';
+
+  renderEmails(obs.emails);
+  renderTasks(obs.tasks);
+  renderCalendar(obs.calendar, obs.step);
+  renderWarnings(obs.warnings);
+}
+
+function renderEmails(emails) {
+  const list = document.getElementById('email-list');
+  const empty = document.getElementById('emails-empty');
+  if (!emails.length) { list.style.display = 'none'; empty.style.display = ''; return; }
+  list.style.display = 'flex'; empty.style.display = 'none';
+  list.innerHTML = emails.map(e => {
+    const typeClass = e.email_type === 'spam' ? 'spam' :
+                      e.email_type === 'informational' ? 'info' :
+                      e.email_type === 'actionable' ? 'actionable' : 'ambiguous';
+    return `<div class="email-card ${typeClass} ${!e.is_read ? 'unread' : ''}">
+      <div class="email-header">
+        <div class="email-subject">${!e.is_read ? '● ' : ''}${esc(e.subject)}</div>
+      </div>
+      <div class="email-meta">
+        <span class="pill pill-${e.priority}">${e.priority}</span>
+        <span class="pill pill-${typeClass}">${e.email_type}</span>
+        ${e.deadline ? `<span class="pill" style="background:rgba(0,212,255,.08);color:var(--accent);border:1px solid rgba(0,212,255,.2)">⏰ deadline: ${e.deadline}</span>` : ''}
+        <span style="font-size:.6rem;color:var(--muted);padding:.15rem .4rem">${esc(e.sender)}</span>
+      </div>
+      <div class="email-body">${esc(e.body)}</div>
+      <div class="email-actions">
+        ${!e.is_read ? `<button class="btn btn-secondary btn-sm" onclick="quickAction({action_type:'read_email',email_id:'${e.id}'})">📖 Read</button>` : ''}
+        ${e.is_read && e.contains_task ? `<button class="btn btn-secondary btn-sm" onclick="quickAction({action_type:'extract_task',email_id:'${e.id}'})">📤 Extract Task</button>` : ''}
+        <button class="btn btn-danger btn-sm" onclick="quickAction({action_type:'delete_email',email_id:'${e.id}'})">🗑 Delete</button>
+        <span style="font-size:.6rem;color:var(--muted);margin-left:auto;align-self:center">ID: ${e.id}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderTasks(tasks) {
+  const list = document.getElementById('task-list');
+  const empty = document.getElementById('tasks-empty');
+  if (!tasks.length) { list.style.display = 'none'; empty.style.display = ''; return; }
+  list.style.display = 'flex'; empty.style.display = 'none';
+  list.innerHTML = tasks.map(t => {
+    const prog = t.effort > 0 ? Math.round(t.progress / t.effort * 100) : 0;
+    return `<div class="task-card ${t.status}">
+      <div class="task-header">
+        <div class="task-title">${esc(t.title)}</div>
+        <span class="pill pill-${t.priority}">${t.priority}</span>
+      </div>
+      <div class="task-meta">
+        <span>📅 deadline: ${t.deadline}</span>
+        <span>⚡ effort: ${t.effort}</span>
+        <span>📍 ${t.status}</span>
+        ${t.scheduled_slot ? `<span>🗓 slot: ${t.scheduled_slot}</span>` : ''}
+      </div>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" style="width:${prog}%"></div>
+      </div>
+      <div class="task-actions">
+        ${t.status !== 'completed' && t.status !== 'deferred' ? `
+          <button class="btn btn-secondary btn-sm" onclick="quickAction({action_type:'complete_task',task_id:'${t.id}'})">✅ Complete</button>
+          <button class="btn btn-secondary btn-sm" onclick="quickAction({action_type:'schedule_task',task_id:'${t.id}',time_slot:${currentStep+1}})">🗓 Schedule</button>
+          <button class="btn btn-danger btn-sm" onclick="quickAction({action_type:'defer_task',task_id:'${t.id}'})">⏭ Defer</button>
+        ` : ''}
+        <span style="font-size:.6rem;color:var(--muted);margin-left:auto;align-self:center">ID: ${t.id}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderCalendar(slots, step) {
+  const view = document.getElementById('calendar-view');
+  const empty = document.getElementById('cal-empty');
+  view.style.display = ''; empty.style.display = 'none';
+  const grid = document.getElementById('calendar-grid');
+  const booked = {};
+  slots.forEach(s => booked[s.time_step] = s.task_id.slice(0, 6));
+  let html = '';
+  for (let i = 1; i <= maxSteps; i++) {
+    const cls = i === step ? 'current' : i < step ? 'past' : '';
+    const bk  = booked[i] ? 'booked' : '';
+    html += `<div class="cal-slot ${cls} ${bk}">
+      <span style="color:var(--muted)">${i}</span>
+      ${booked[i] ? `<span style="font-size:.5rem">${booked[i]}</span>` : ''}
+    </div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function renderWarnings(warnings) {
+  const wl = document.getElementById('warnings-list');
+  if (!warnings.length) { wl.innerHTML = '<div style="font-size:.7rem;color:var(--muted)">No active alerts.</div>'; return; }
+  wl.innerHTML = warnings.map(w => `<div class="warning-item">${esc(w)}</div>`).join('');
+}
+
+function appendLog(step, action, reward, info) {
+  const container = document.getElementById('log-container');
+  const empty = document.getElementById('log-empty');
+  container.style.display = 'flex'; empty.style.display = 'none';
+  const r = reward.total;
+  const cls = r >= 0 ? 'pos' : 'neg';
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `
+    <span class="log-step">${step}</span>
+    <span class="log-action">${action}</span>
+    <span class="log-reward ${cls}">${r >= 0 ? '+' : ''}${r.toFixed(2)}</span>
+    <span class="log-msg">${esc((info.message || '').slice(0, 70))}</span>
+  `;
+  container.appendChild(entry);
+  container.scrollTop = container.scrollHeight;
+}
+
+function clearLog() {
+  const c = document.getElementById('log-container');
+  c.innerHTML = '';
+  c.style.display = 'none';
+  document.getElementById('log-empty').style.display = '';
+}
+
+function showScore(score) {
+  document.getElementById('score-empty').style.display = 'none';
+  document.getElementById('score-view').style.display = '';
+  document.getElementById('score-overall').textContent    = score.overall.toFixed(3);
+  document.getElementById('score-completion').textContent = score.task_completion_score.toFixed(3);
+  document.getElementById('score-deadline').textContent   = score.deadline_adherence_score.toFixed(3);
+  document.getElementById('score-efficiency').textContent = score.efficiency_score.toFixed(3);
+  document.getElementById('score-resource').textContent   = score.resource_score.toFixed(3);
+  const bd = score.breakdown;
+  document.getElementById('score-breakdown-detail').innerHTML =
+    `Tasks: ${bd.tasks_completed}/${bd.tasks_total} completed | ` +
+    `Overdue: ${bd.tasks_overdue} | Deferred: ${bd.tasks_deferred}<br>` +
+    `Spam deleted: ${bd.spam_deleted}/${bd.total_spam} | ` +
+    `Important deleted: ${bd.important_deleted}<br>` +
+    `Actions taken: ${bd.total_actions} (min est. ${bd.min_actions_est}) | ` +
+    `Final energy: ${(bd.final_energy * 100).toFixed(0)}%`;
+  switchTab('score');
+}
+
+// ── Tab switching
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const names = ['emails','tasks','calendar','log','score'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ── Action form params
+function updateActionParams() {
+  const v = document.getElementById('action-type').value;
+  const emailActions = ['read_email','extract_task','delete_email'];
+  const taskActions  = ['complete_task','defer_task','schedule_task','defer_task'];
+  document.getElementById('email-id-row').style.display = emailActions.includes(v) ? '' : 'none';
+  document.getElementById('task-id-row').style.display  = ['complete_task','defer_task','schedule_task'].includes(v) ? '' : 'none';
+  document.getElementById('time-slot-row').style.display= v === 'schedule_task' ? '' : 'none';
+}
+
+// ── Toast
+function showToast(msg, type = 'info') {
+  const c = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+
+// ── Escape HTML
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Init
+updateActionParams();
+</script>
+</body>
+</html>
