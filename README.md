@@ -1,7 +1,7 @@
 ---
 title: AgentOpsEnv Real-World Workflow Optimisation
 emoji: ⚙️
-colorFrom: cyan
+colorFrom: blue
 colorTo: purple
 sdk: docker
 pinned: false
