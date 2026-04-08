@@ -150,7 +150,24 @@ async def create_session(req: CreateSessionRequest):
 
 @app.post("/reset")
 @app.post("/session/reset")
-async def reset_session(req: ResetRequest):
+async def reset_session(req: ResetRequest = None):
+
+    if req is None:
+        session_id = str(uuid.uuid4())[:12]
+
+        env = AgentOpsEnv(
+            difficulty="medium",
+            seed=42
+        )
+
+        obs = env.reset()
+
+        _sessions[session_id] = env
+
+        return {
+            "session_id": session_id,
+            "observation": json.loads(obs.model_dump_json()),
+        }
 
     env = _get_session(req.session_id)
 
