@@ -20,6 +20,8 @@ from pydantic import BaseModel
 from environment import AgentOpsEnv, Action
 from tasks import list_tasks, get_task
 from leaderboard import load_leaderboard, submit as lb_submit, init_with_baselines
+from typing import Optional
+
 
 
 # ─────────────────────────────────────────────
@@ -148,9 +150,11 @@ async def create_session(req: CreateSessionRequest):
     }
 
 
+
+
 @app.post("/reset")
 @app.post("/session/reset")
-async def reset_session(req: ResetRequest = None):
+async def reset_session(req: Optional[ResetRequest] = None):
 
     if req is None:
         session_id = str(uuid.uuid4())[:12]
